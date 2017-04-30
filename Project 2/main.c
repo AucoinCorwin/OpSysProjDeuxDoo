@@ -77,17 +77,28 @@ int main(int argc, char * argv[]) {
   // Create processes from raw data
   struct Process* proc_array = (struct Process*) calloc(num_proc, sizeof(struct Process));
   int j;
+  int k;
   int init;
   for (i = 0; i < num_proc; i++) {
       proc_array[i].id = proc_raw[i][0];
       proc_array[i].memory = get_seg(2, 256, proc_raw[i], ' ');
       j = 2 + 1 + int_len(proc_array[i].memory);
-      /*proc_array[i].t_arr = get_seg(j, 256, proc_raw[i], '/');
-      j += 1 + int_len(proc_array[i].t_arr);
-      proc_array[i].t_run = get_seg(j, 256, proc_raw[i], ' ');
-      j += 1 + int_len(proc_array[i].t_run);*/ // t_arr and t_run are ints?
+      proc_array[i].list_size = 0;
+      proc_array[i].arrive_times = (int*) calloc(5, sizeof(int));
+      proc_array[i].run_times = (int*) calloc(5, sizeof(int));
+      while (j < 256) {
+        if (proc_raw[i][j] == '\n') break;
+        else {
+          proc_array[i].arrive_times[proc_array[i].list_size] = get_seg(j, 256, proc_raw[i], '/');
+          j = 1 + int_len(proc_array[i].arrive_times[proc_array[i].list_size]);
+          proc_array[i].run_times[proc_array[i].list_size] = get_seg(j, 256, proc_raw[i], ' ');
+          j = 1 + int_len(proc_array[i].run_times[proc_array[i].list_size]);
+          proc_array[i].list_size += 1;
+        }
+      }
   }
-    
+  free(proc_raw);
+  
   char memory[32][8];
   return EXIT_SUCCESS;
 }
