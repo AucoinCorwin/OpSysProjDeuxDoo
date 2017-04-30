@@ -19,13 +19,109 @@
 
 // Darien Keyack (661190088) and Corwin Aucoin (661178786)
 
-int next_fit(int part_num, int** partitions, char** memory, struct Process proc) {
+void next_fit(int part_num, int** partitions, char** memory, struct Process proc) {
   int zz = 0;
+  int tick = 0;
   for(zz = 0; zz < part_num; zz++) {
     if(partitions[zz][2] >= proc.memory) {
-   
+      int i = partitions[zz][0];
+      int j = partitions[zz][1];
+      int count = proc.memory;
+      while(count > 0){
+        tick = 1;
+        memory[i][j] = proc.id;
+        i++;
+        if(i > 31){
+          i = 0;
+          j++;
+        }
+        count--;
+      }
+      break;
     }
   }
+  if(tick == 0)
+    return -1;
+  return 0;
+}
+
+int best_fit(int part_num, int** partitions, char** memory, struct Process proc){
+  int zz = 0;
+  int size, loc = 99;
+  for(zz = 0; zz < part_num; zz++){
+    if(partitions[zz][2] - proc.memory < size){
+      loc = zz;
+      size = partitions[zz][2] - proc.memory;
+    }
+  }
+  if(loc == 99){
+    //There's no space that works
+    return -1;
+  }
+  int i = partitions[loc][0];
+  int j = partitions[loc][1];
+  int count = proc.memory;
+  while(count > 0){
+    memory[i][j] = proc.id;
+    i++;
+    if(i > 31){
+      i = 0;
+      j++;
+    }
+    count--;
+  }
+  return 0;
+}
+
+int worst_fit(int part_num, int** partitions, char** memory, struct Process proc){
+  int zz = 0;
+  int size, loc = -1;
+  for(zz = 0; zz < part_num; zz++){
+    if(partitions[zz][2] - proc.memory > size){
+      loc = zz;
+      size = partitions[zz][2] - proc.memory;
+    }
+  }
+  if(loc == -1){
+    //There's no space that works
+    return -1;
+  }
+  int i = partitions[loc][0];
+  int j = partitions[loc][1];
+  int count = proc.memory;
+  while(count > 0){
+    memory[i][j] = proc.id;
+    i++;
+    if(i > 31){
+      i = 0;
+      j++;
+    }
+    count--;
+  }
+  return 0;
+}
+
+int first_fit(char** memory, struct Process proc){
+  int free = 0;
+  int i, j = 0;
+  for(i = 0; i < 32; i++){
+    for(j = 0; j < 8; j++){
+      if(memory[i][j] == '.'){
+        free++;
+      }
+    }
+  }
+  if(free < proc.memory)
+    return -1;
+  for(i = 0; i < 32; i++){
+    for(j = 0; j < 8; j++){
+      if(memory[i][j] == '.' && free > 0){
+        memory[i][j] = proc.id;
+        free--;
+      }
+    }
+  }
+  return 0;
 }
 
 int get_parts(char **memory, int **partitions) {
