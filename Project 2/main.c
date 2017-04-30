@@ -80,12 +80,12 @@ int main(int argc, char * argv[]) {
   int init;
   for (i = 0; i < num_proc; i++) {
       proc_array[i].id = proc_raw[i][0];
-      proc_array[i].mem_frames = get_seg(2, 256, proc_raw[i], ' ');
-      j = 2 + 1 + int_len(proc_array[i].mem_frames);
-      proc_array[i].t_arr = get_seg(j, 256, proc_raw[i], '/');
+      proc_array[i].memory = get_seg(2, 256, proc_raw[i], ' ');
+      j = 2 + 1 + int_len(proc_array[i].memory);
+      /*proc_array[i].t_arr = get_seg(j, 256, proc_raw[i], '/');
       j += 1 + int_len(proc_array[i].t_arr);
       proc_array[i].t_run = get_seg(j, 256, proc_raw[i], ' ');
-      j += 1 + int_len(proc_array[i].t_run);
+      j += 1 + int_len(proc_array[i].t_run);*/ // t_arr and t_run are ints?
   }
     
   char memory[32][8];
