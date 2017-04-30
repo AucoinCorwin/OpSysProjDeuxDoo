@@ -14,12 +14,13 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <dirent.h>
+#include <math.h>
 
 #include "process.h"
 
 // Darien Keyack (661190088) and Corwin Aucoin (661178786)
 
-void next_fit(int part_num, int** partitions, char** memory, struct Process proc) {
+int next_fit(int part_num, int** partitions, char** memory, struct Process proc) {
   int zz = 0;
   int tick = 0;
   for(zz = 0; zz < part_num; zz++) {
@@ -173,8 +174,6 @@ int main(int argc, char * argv[]) {
   // Create processes from raw data
   struct Process* proc_array = (struct Process*) calloc(num_proc, sizeof(struct Process));
   int j;
-  int k;
-  int init;
   for (i = 0; i < num_proc; i++) {
       proc_array[i].id = proc_raw[i][0];
       proc_array[i].memory = get_seg(2, 256, proc_raw[i], ' ');
@@ -195,6 +194,6 @@ int main(int argc, char * argv[]) {
   }
   free(proc_raw);
   
-  char memory[32][8];
+  //char memory[32][8];
   return EXIT_SUCCESS;
 }
