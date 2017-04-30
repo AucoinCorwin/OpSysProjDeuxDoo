@@ -15,7 +15,7 @@ int get_seg(int init, int max, char* msg, char forbidden) {
         if (msg[i] == forbidden) break;
         else line[i - init] = msg[i];
     }
-    line[i - init + 1] = '\0';
+    line[i - init] = '\0';
     return atoi(line);
 }
 

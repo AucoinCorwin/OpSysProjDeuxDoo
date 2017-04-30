@@ -195,15 +195,6 @@ int main(int argc, char * argv[]) {
   
   //char memory[32][8];
   
-  // free proc_array
-  printf("%d\n", num_proc);
-  for (i = 0; i < num_proc; i++) {
-    printf("%c %d", proc_array[i].id, proc_array[i].memory);
-    for (j = 0; j < proc_array[i].list_size; j++) {
-      printf(" %d/%d", proc_array[i].arrive_times[j], proc_array[i].run_times[j]);
-    }
-    printf("\n");
-  }
-  fflush(stdout);
+  free(proc_array);
   return EXIT_SUCCESS;
 }
