@@ -154,25 +154,26 @@ int main(int argc, char * argv[]) {
   
   // Read number of processes from input file
   char line[256];
-  fgets(line, sizeof(line), input);
+  fgets(line, 256, input);
   if (line == NULL) msg_error("input file too short");
   int num_proc = atoi(line);
-  if (num_proc < 1 || num_proc > 26) msg_error("invalid number of processes");
+  if ((num_proc < 1) || (num_proc > 26)) msg_error("invalid number of processes");
   
   // Read in raw processes from input file
-  char** proc_raw = (char**) calloc(num_proc, 256);
+  char** proc_raw = (char**) calloc(num_proc, sizeof(char*));
   int i = 0;
-  while (fgets(line, sizeof(line), input) && i < num_proc) {
+  while ((fgets(line, 256, input) != NULL) && (i < num_proc)) {
       if (line[0] != ' ' && line[0] != '#') {
-          proc_raw[i] = line;
+          proc_raw[i] = malloc(256 * sizeof(char));
+          strncpy(proc_raw[i], line, 255);
           i++;
       }
   }
+  if ((i < num_proc) || (fgets(line, 256, input) != NULL)) msg_error("invalid number of processes");
   fclose(input);
-  if (i < num_proc || fgets(line, sizeof(line), input) != NULL) msg_error("invalid number of processes");
   
   // Create processes from raw data
-  struct Process* proc_array = (struct Process*) calloc(num_proc, sizeof(struct Process));
+  struct Process* proc_array = (struct Process*) malloc(num_proc * sizeof(struct Process));
   int j;
   for (i = 0; i < num_proc; i++) {
       proc_array[i].id = proc_raw[i][0];
@@ -181,19 +182,28 @@ int main(int argc, char * argv[]) {
       proc_array[i].list_size = 0;
       proc_array[i].arrive_times = (int*) calloc(5, sizeof(int));
       proc_array[i].run_times = (int*) calloc(5, sizeof(int));
-      while (j < 256) {
-        if (proc_raw[i][j] == '\n') break;
-        else {
-          proc_array[i].arrive_times[proc_array[i].list_size] = get_seg(j, 256, proc_raw[i], '/');
-          j = 1 + int_len(proc_array[i].arrive_times[proc_array[i].list_size]);
-          proc_array[i].run_times[proc_array[i].list_size] = get_seg(j, 256, proc_raw[i], ' ');
-          j = 1 + int_len(proc_array[i].run_times[proc_array[i].list_size]);
-          proc_array[i].list_size += 1;
-        }
+      while ((j < 256) && (proc_raw[i][j] != '\n') && (proc_raw[i][j] != '\0') && (proc_array[i].list_size < 5)) {
+        proc_array[i].arrive_times[proc_array[i].list_size] = get_seg(j, 256, proc_raw[i], '/');
+        j += 1 + int_len(proc_array[i].arrive_times[proc_array[i].list_size]);
+        proc_array[i].run_times[proc_array[i].list_size] = get_seg(j, 256, proc_raw[i], ' ');
+        j += 1 + int_len(proc_array[i].run_times[proc_array[i].list_size]);
+        proc_array[i].list_size += 1;
       }
+      free(proc_raw[i]);
   }
   free(proc_raw);
   
   //char memory[32][8];
+  
+  // free proc_array
+  printf("%d\n", num_proc);
+  for (i = 0; i < num_proc; i++) {
+    printf("%c %d", proc_array[i].id, proc_array[i].memory);
+    for (j = 0; j < proc_array[i].list_size; j++) {
+      printf(" %d/%d", proc_array[i].arrive_times[j], proc_array[i].run_times[j]);
+    }
+    printf("\n");
+  }
+  fflush(stdout);
   return EXIT_SUCCESS;
 }
