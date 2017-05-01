@@ -205,7 +205,7 @@ int main(int argc, char * argv[]) {
   }
   msg_memory(memory);
   
-  int ** partitions;
+  int ** partitions = malloc(0);
   // Contiguous -- Next-Fit
   int t = 0;
   msg_sim_start(t, "Contiguous -- Next-Fit");
