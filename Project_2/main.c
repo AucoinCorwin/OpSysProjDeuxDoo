@@ -121,7 +121,7 @@ int first_fit(char** memory, struct Process proc) {
       if (memory[i][j] == '.') freemem++;
     }
   }
-  if (free < proc.memory) return -1;
+  if (freemem < proc.memory) return -1;
   for (i = 0; i < 32; i++) {
     for (j = 0; j < 8; j++) {
       if ((memory[i][j] == '.') && (freemem > 0)) {
@@ -209,6 +209,12 @@ int main(int argc, char * argv[]) {
   }
   free(proc_raw);
   
+  for (i = 0; i < num_proc; i++) {
+    printf("arrival times %c: ", proc_array[i].id);
+    for (j = 0; j < proc_array[i].list_size; j++) printf("%d ", proc_array[i].arrive_times[j]);
+    printf("\n");
+  }
+  fflush(stdout);
   // Initialize memory
   char** memory = (char**) calloc(32, sizeof(char*));
   for (i = 0; i < 32; i++) {
