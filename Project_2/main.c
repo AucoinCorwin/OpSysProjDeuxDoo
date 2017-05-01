@@ -143,9 +143,11 @@ int get_parts(char **memory, struct Partition *partitions) {
       if (memory[i][j] == '.'){
         if(count == 0){
           parts++;
+          printf("%d\n", parts);
           partitions = realloc(partitions, parts * sizeof(struct Process));
           partitions[parts - 1].x = i;
           partitions[parts - 1].y = j;
+          
         }
         count++;
       } 
@@ -222,9 +224,10 @@ int main(int argc, char * argv[]) {
   msg_sim_start(t, "Contiguous -- Next-Fit");
   while (t < 20000) { // TBA: fix to be actual condition (stop when all processes are finished)
     for (i = 0; i < num_proc; i++) {
-      for (j = proc_array[i].list_size; j > 0; j--) {
+      for (j = 0; j < proc_array[i].list_size; j++) {
         if (proc_array[i].arrive_times[j] == t) {
           msg_arrive(t, proc_array[i].id, proc_array[i].memory);
+          printf("It happens in get_parts\n");
           int num_parts = get_parts(memory, partitions);
           int result = next_fit(num_parts, partitions, memory, proc_array[i]);
           if (result == -1) {
