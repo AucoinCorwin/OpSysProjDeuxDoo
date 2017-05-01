@@ -21,6 +21,12 @@
 
 // Darien Keyack (661190088) and Corwin Aucoin (661178786)
 
+struct Partition {
+  int x;
+  int y;
+  int size;
+}
+
 int next_fit(int part_num, int** partitions, char** memory, struct Process proc) {
   int zz = 0;
   int tick = 0;
@@ -133,7 +139,7 @@ int get_parts(char **memory, int **partitions) {
       }
     }
   }
-  if(count == 256){
+  if (count == 256) {
     parts++;
     partitions = realloc(partitions, parts * (sizeof(int) * 3));
     partitions[parts][0] = 0;
