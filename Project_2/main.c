@@ -175,11 +175,20 @@ int get_parts(char **memory, struct Partition *partitions, int px, int py) {
           
       if (memory[i][j] == '.'){
         if(count == 0){
+          if(i + j != 0){
+            if(j == 0){
+              if(memory[i][7] == '.')
+                continue;
+            }
+            else{
+              if(memory[i][j - 1] == '.')
+                continue;
+            }
+          }
           parts++;
           partitions = realloc(partitions, parts * sizeof(struct Process));
           partitions[parts - 1].x = i;
           partitions[parts - 1].y = j;
-          
         }
         count++;
       } 
@@ -245,7 +254,7 @@ int defrag(char **memory){
       }
     }
   }
-  //TBA Figure out how to calculate the number of frames moved?
+  
   return count;
 }
 
@@ -359,9 +368,13 @@ int main(int argc, char * argv[]) {
             int result = next_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
             if (result == -1) {
               if(get_open_mem(memory) >= proc_array[i].memory){
+                msg_defrag_start(rt, proc_array[i].id)
                 defrag_stop = defrag(memory);
                 rt += defrag_stop;
+                //TBA: Fetch a list of chars moved
+                //msg_defrag_end(rt, defrag_stop, , memory)
                 defrag_stop += t;
+                
                 partitions = malloc(sizeof(struct Partition));
                 num_parts = get_parts(memory, partitions, px, py);
                 result = next_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
