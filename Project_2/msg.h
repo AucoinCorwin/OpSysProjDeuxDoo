@@ -52,3 +52,21 @@ void msg_skip(int t, char id) {
     printf("time %dms: Cannot place process %c -- skipped!\n", t, id);
     fflush(stdout);
 }
+
+// Start defragmentation
+void msg_defrag_start(int t, char id) {
+    printf("time %dms: Cannot place process %c -- starting defragmentation\n", t, id);
+    fflush(stdout);
+}
+
+// Ending defragmentation
+void msg_defrag_end(int t, int frames, char* list, char** mem) {
+    printf("time %dms: Defragmentation complete (moved %d frames: ", t, frames);
+    int i;
+    for (i = 0; i < sizeof(list); i++) {
+        printf("%c", list[i]);
+        if (i < sizeof(list) - 1) printf(", ");
+    }
+    printf(")\n");
+    msg_memory(mem);
+}
