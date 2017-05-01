@@ -209,24 +209,18 @@ int main(int argc, char * argv[]) {
   }
   free(proc_raw);
   
-  for (i = 0; i < num_proc; i++) {
-    printf("arrival times %c: ", proc_array[i].id);
-    for (j = 0; j < proc_array[i].list_size; j++) printf("%d ", proc_array[i].arrive_times[j]);
-    printf("\n");
-  }
-  fflush(stdout);
   // Initialize memory
   char** memory = (char**) calloc(32, sizeof(char*));
   for (i = 0; i < 32; i++) {
     memory[i] = malloc(8 * sizeof(char));
     for (j = 0; j < 8; j++) memory[i][j] = '.';
   }
-  
   struct Partition* partitions = malloc(sizeof(struct Partition));
+  
   // Contiguous -- Next-Fit
   int t = 0;
   msg_sim_start(t, "Contiguous -- Next-Fit");
-  while (t < 20000) {
+  while (t < 20000) { // TBA: fix to be actual condition (stop when all processes are finished)
     for (i = 0; i < num_proc; i++) {
       for (j = proc_array[i].list_size; j > 0; j--) {
         if (proc_array[i].arrive_times[j] == t) {
@@ -239,13 +233,9 @@ int main(int argc, char * argv[]) {
             // If No: ignore
             msg_skip(t, proc_array[i].id);
           }
-          else {
-            // TBA: place
-             msg_place(t, proc_array[i].id, memory);
-          }
+          else msg_place(t, proc_array[i].id, memory);
         }
         if (proc_array[i].arrive_times[j] + proc_array[i].run_times[j] == t) {
-          // TBA: Handle removal
           remove_from_mem(proc_array[i].id, memory);
           msg_remove(t, proc_array[i].id, memory);
         }
