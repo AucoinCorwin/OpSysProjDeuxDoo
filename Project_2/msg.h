@@ -22,7 +22,7 @@ void msg_arrive(int t, char id, int memory) {
     fflush(stdout);
 }
 
-// Visualize memory (TBA)
+// Visualize memory
 void msg_memory(char** mem) {
     printf("================================\n");
     int i;

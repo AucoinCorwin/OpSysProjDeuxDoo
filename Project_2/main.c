@@ -202,6 +202,28 @@ int main(int argc, char * argv[]) {
   }
   msg_memory(memory);
   
+  // Contiguous -- Next-Fit
+  int t = 0;
+  msg_sim_start(t, "Contiguous -- Next-Fit");
+  // TBA: actual stuff
+  msg_sim_end(t, "Contiguous -- Next-Fit");
+  
+  // Contiguous -- Best-Fit
+  for (i = 0; i < 8; i++) for (j = 0; j < 32; j++) memory[i][j] = '.';
+  t = 0;
+  printf("\n");
+  msg_sim_start(t, "Contiguous -- Best-Fit");
+  // TBA: actual stuff
+  msg_sim_end(t, "Contiguous -- Best-Fit");
+  
+  // Non-contiguous
+  for (i = 0; i < 8; i++) for (j = 0; j < 32; j++) memory[i][j] = '.';
+  t = 0;
+  printf("\n");
+  msg_sim_start(t, "Non-contiguous");
+  // TBA: actual stuff
+  msg_sim_end(t, "Non-contiguous");
+  
   // Free & exit
   free(proc_array);
   for (i = 0; i < 8; i++) free(memory[i]);
