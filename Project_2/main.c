@@ -194,8 +194,17 @@ int main(int argc, char * argv[]) {
   }
   free(proc_raw);
   
-  //char memory[32][8];
+  // Initialize memory
+  char** memory = (char**) calloc(8, sizeof(char*));
+  for (i = 0; i < 8; i++) {
+    memory[i] = malloc(32 * sizeof(char));
+    for (j = 0; j < 32; j++) memory[i][j] = '.';
+  }
+  msg_memory(memory);
   
+  // Free & exit
   free(proc_array);
+  for (i = 0; i < 8; i++) free(memory[i]);
+  free(memory);
   return EXIT_SUCCESS;
 }

@@ -24,7 +24,14 @@ void msg_arrive(int t, char id, int memory) {
 
 // Visualize memory (TBA)
 void msg_memory(char** mem) {
-    printf("memory visualization not implemented!\n");
+    printf("================================\n");
+    int i;
+    int j;
+    for (i = 0; i < 8; i++) {
+        for (j = 0; j < 32; j++) printf("%c", mem[i][j]);
+        printf("\n");
+    }
+    printf("================================\n");
     fflush(stdout);
 }
 
