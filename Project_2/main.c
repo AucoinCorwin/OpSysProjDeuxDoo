@@ -133,6 +133,13 @@ int get_parts(char **memory, int **partitions) {
       }
     }
   }
+  if(count == 256){
+    parts++;
+    partitions = realloc(partitions, parts * (sizeof(int) * 3));
+    partitions[parts][0] = 0;
+    partitions[parts][1] = 0;
+    partitions[parts][2] = count;
+  }
   return parts;
 }
 
@@ -198,23 +205,23 @@ int main(int argc, char * argv[]) {
     for (i = 0; i < num_proc; i++) {
       for (j = proc_array[i].list_size; j > 0; j--) {
         if (proc_array[i].arrive_times[j] == t) {
-          msg_arrive(t, proc_array[i].id, proc_array[i].memory);
+          //msg_arrive(t, proc_array[i].id, proc_array[i].memory);
           int num_parts = get_parts(memory, partitions);
           int result = next_fit(num_parts, partitions, memory, proc_array[i]);
           if (result > -1) {
             // TBA: Check if we have space if we defrag
             // If Yes: Defrag
             // If No: ignore
-            msg_skip(t, proc_array[i].id);
+            //msg_skip(t, proc_array[i].id);
           }
           else {
             // TBA: place
-             msg_place(t, proc_array[i].id, memory);
+             //msg_place(t, proc_array[i].id, memory);
           }
         }
         if (proc_array[i].arrive_times[j] + proc_array[i].run_times[j] == t) {
           // TBA: Handle removal
-          msg_remove(t, proc_array[i].id, memory);
+          //msg_remove(t, proc_array[i].id, memory);
         }
       }
     }
