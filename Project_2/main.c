@@ -114,19 +114,19 @@ int worst_fit(int part_num, struct Partition * partitions, char** memory, struct
 }
 
 int first_fit(char** memory, struct Process proc) {
-  int free = 0;
+  int freemem = 0;
   int i, j = 0;
   for (i = 0; i < 32; i++) {
     for (j = 0; j < 8; j++) {
-      if (memory[i][j] == '.') free++;
+      if (memory[i][j] == '.') freemem++;
     }
   }
   if (free < proc.memory) return -1;
   for (i = 0; i < 32; i++) {
     for (j = 0; j < 8; j++) {
-      if ((memory[i][j] == '.') && (free > 0)) {
+      if ((memory[i][j] == '.') && (freemem > 0)) {
         memory[i][j] = proc.id;
-        free--;
+        freemem--;
       }
     }
   }
