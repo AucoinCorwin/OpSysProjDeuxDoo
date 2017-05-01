@@ -27,8 +27,8 @@ void msg_memory(char** mem) {
     printf("================================\n");
     int i;
     int j;
-    for (i = 0; i < 8; i++) {
-        for (j = 0; j < 32; j++) printf("%c", mem[i][j]);
+    for (j = 0; j < 8; j++) {
+        for (i = 0; i < 32; i++) printf("%c", mem[i][j]);
         printf("\n");
     }
     printf("================================\n");

@@ -203,35 +203,33 @@ int main(int argc, char * argv[]) {
     memory[i] = malloc(8 * sizeof(char));
     for (j = 0; j < 8; j++) memory[i][j] = '.';
   }
-  msg_memory(memory);
   
-  int ** partitions = malloc(0);
+  int** partitions = malloc(0);
   // Contiguous -- Next-Fit
   int t = 0;
   msg_sim_start(t, "Contiguous -- Next-Fit");
-  while(t < 20000){
-    for(i = 0; i < num_proc; i++){
-      for(j = proc_array[i].list_size; j > 0; j--){
-        if(proc_array[i].arrive_times[j] == t){
+  while (t < 20000) {
+    for (i = 0; i < num_proc; i++) {
+      for (j = proc_array[i].list_size; j > 0; j--) {
+        if (proc_array[i].arrive_times[j] == t) {
           int num_parts = get_parts(memory, partitions);
           int result = next_fit(num_parts, partitions, memory, proc_array[i]);
-          if(result > -1){
+          if (result > -1) {
             //Check if we have space if we defrag
             //If Yes: Defrag
             //If No: ignore
           }
-          else{
+          else {
             //Uhhh, idk
           }
         }
-        if(proc_array[i].arrive_times[j] + proc_array[i].run_times[j] == t){
+        if (proc_array[i].arrive_times[j] + proc_array[i].run_times[j] == t) {
           //Handle removal (not implemented)
         }
       }
     }
     t++;
   }
-  // TBA: actual stuff
   msg_sim_end(t, "Contiguous -- Next-Fit");
   
   // Contiguous -- Best-Fit
@@ -252,7 +250,6 @@ int main(int argc, char * argv[]) {
   
   // Free & exit
   free(proc_array);
-  for (i = 0; i < 32; i++) free(memory[i]);
-  free(memory);
+  // free memory
   return EXIT_SUCCESS;
 }
