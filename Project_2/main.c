@@ -25,15 +25,26 @@ struct Partition {
   int x;
   int y;
   int size;
+};
+
+void remove_from_mem(char id, char** memory){
+  int i, j;
+  for(j = 0; j < 8; j++){
+    for(i = 0; i < 32; i++){
+      if(memory[i][j] == id){
+        memory[i][j] = '.';
+      }
+    }
+  }
 }
 
-int next_fit(int part_num, int** partitions, char** memory, struct Process proc) {
+int next_fit(int part_num, struct Partition * partitions, char** memory, struct Process proc) {
   int zz = 0;
   int tick = 0;
   for (zz = 0; zz < part_num; zz++) {
-    if (partitions[zz][2] >= proc.memory) {
-      int i = partitions[zz][0];
-      int j = partitions[zz][1];
+    if (partitions[zz].size >= proc.memory) {
+      int i = partitions[zz].x;
+      int j = partitions[zz].y;
       int count = proc.memory;
       while (count > 0) {
         tick = 1;
@@ -52,18 +63,18 @@ int next_fit(int part_num, int** partitions, char** memory, struct Process proc)
   else return 0;
 }
 
-int best_fit(int part_num, int** partitions, char** memory, struct Process proc) {
+int best_fit(int part_num, struct Partition * partitions, char** memory, struct Process proc) {
   int zz = 0;
   int size, loc = 99;
   for (zz = 0; zz < part_num; zz++) {
-    if (partitions[zz][2] - proc.memory < size) {
+    if (partitions[zz].size - proc.memory < size) {
       loc = zz;
-      size = partitions[zz][2] - proc.memory;
+      size = partitions[zz].size - proc.memory;
     }
   }
   if (loc == 99) return -1;  // There's no space that works
-  int i = partitions[loc][0];
-  int j = partitions[loc][1];
+  int i = partitions[loc].x;
+  int j = partitions[loc].y;
   int count = proc.memory;
   while (count > 0) {
     memory[i][j] = proc.id;
@@ -77,18 +88,18 @@ int best_fit(int part_num, int** partitions, char** memory, struct Process proc)
   return 0;
 }
 
-int worst_fit(int part_num, int** partitions, char** memory, struct Process proc) {
+int worst_fit(int part_num, struct Partition * partitions, char** memory, struct Process proc) {
   int zz = 0;
-  int size, loc = -1;
+  int size, loc = 99;
   for (zz = 0; zz < part_num; zz++) {
-    if (partitions[zz][2] - proc.memory > size) {
+    if (partitions[zz].size - proc.memory > size) {
       loc = zz;
-      size = partitions[zz][2] - proc.memory;
+      size = partitions[zz].size - proc.memory;
     }
   }
-  if (loc == -1) return -1; // There's no space that works
-  int i = partitions[loc][0];
-  int j = partitions[loc][1];
+  if (loc == 99) return -1;  // There's no space that works
+  int i = partitions[loc].x;
+  int j = partitions[loc].y;
   int count = proc.memory;
   while (count > 0) {
     memory[i][j] = proc.id;
@@ -122,29 +133,31 @@ int first_fit(char** memory, struct Process proc) {
   return 0;
 }
 
-int get_parts(char **memory, int **partitions) {
+int get_parts(char **memory, struct Partition *partitions) {
   int i, j, count, parts;
   count = 0;
   parts = 0;
-  for (i = 0; i < 32; i++) {
-    for (j = 0; j < 8; j++) {
-      if (memory[i][j] == '.') count++;
+  
+  for (j = 0; j < 8; j++) {
+    for (i = 0; i < 32; i++) {
+      if (memory[i][j] == '.'){
+        if(count == 0){
+          parts++;
+          partitions = realloc(partitions, parts * sizeof(struct Process));
+          partitions[parts - 1].x = i;
+          partitions[parts - 1].y = j;
+        }
+        count++;
+      } 
       else if (count != 0) {
-        parts++;
-        partitions = realloc(partitions, parts * (sizeof(int) * 3));
-        partitions[parts][0] = i;
-        partitions[parts][1] = j;
-        partitions[parts][2] = count;
+        partitions[parts - 1].size = count;
         count = 0;
       }
     }
   }
-  if (count == 256) {
-    parts++;
-    partitions = realloc(partitions, parts * (sizeof(int) * 3));
-    partitions[parts][0] = 0;
-    partitions[parts][1] = 0;
-    partitions[parts][2] = count;
+  if(count > 0){
+    partitions[parts - 1].size = count;
+    count = 0;
   }
   return parts;
 }
@@ -203,7 +216,7 @@ int main(int argc, char * argv[]) {
     for (j = 0; j < 8; j++) memory[i][j] = '.';
   }
   
-  int** partitions = malloc(0);
+  struct Partition* partitions = malloc(sizeof(struct Partition));
   // Contiguous -- Next-Fit
   int t = 0;
   msg_sim_start(t, "Contiguous -- Next-Fit");
@@ -211,23 +224,24 @@ int main(int argc, char * argv[]) {
     for (i = 0; i < num_proc; i++) {
       for (j = proc_array[i].list_size; j > 0; j--) {
         if (proc_array[i].arrive_times[j] == t) {
-          //msg_arrive(t, proc_array[i].id, proc_array[i].memory);
+          msg_arrive(t, proc_array[i].id, proc_array[i].memory);
           int num_parts = get_parts(memory, partitions);
           int result = next_fit(num_parts, partitions, memory, proc_array[i]);
-          if (result > -1) {
+          if (result == -1) {
             // TBA: Check if we have space if we defrag
             // If Yes: Defrag
             // If No: ignore
-            //msg_skip(t, proc_array[i].id);
+            msg_skip(t, proc_array[i].id);
           }
           else {
             // TBA: place
-             //msg_place(t, proc_array[i].id, memory);
+             msg_place(t, proc_array[i].id, memory);
           }
         }
         if (proc_array[i].arrive_times[j] + proc_array[i].run_times[j] == t) {
           // TBA: Handle removal
-          //msg_remove(t, proc_array[i].id, memory);
+          remove_from_mem(proc_array[i].id, memory);
+          msg_remove(t, proc_array[i].id, memory);
         }
       }
     }
