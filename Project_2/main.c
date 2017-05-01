@@ -360,7 +360,6 @@ int main(int argc, char * argv[]) {
             if (result == -1) {
               if(get_open_mem(memory) >= proc_array[i].memory){
                 defrag_stop = defrag(memory);
-                printf("%d\n", defrag_stop);
                 rt += defrag_stop;
                 defrag_stop += t;
                 partitions = malloc(sizeof(struct Partition));
@@ -446,7 +445,6 @@ int main(int argc, char * argv[]) {
             if (result == -1) {
               if(get_open_mem(memory) >= proc_array[i].memory){
                 defrag_stop = defrag(memory);
-                printf("%d\n", defrag_stop);
                 rt += defrag_stop;
                 defrag_stop += t;
                 partitions = malloc(sizeof(struct Partition));
@@ -530,7 +528,6 @@ int main(int argc, char * argv[]) {
             if (result == -1) {
               if(get_open_mem(memory) >= proc_array[i].memory){
                 defrag_stop = defrag(memory);
-                printf("%d\n", defrag_stop);
                 rt += defrag_stop;
                 defrag_stop += t;
                 partitions = malloc(sizeof(struct Partition));
