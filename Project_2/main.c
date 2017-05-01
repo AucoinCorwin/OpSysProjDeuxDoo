@@ -16,8 +16,8 @@
 #include <dirent.h>
 #include <math.h>
 
-#include "process.h"
 #include "msg.h"
+#include "process.h"
 
 // Darien Keyack (661190088) and Corwin Aucoin (661178786)
 
