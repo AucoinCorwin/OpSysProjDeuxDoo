@@ -3,6 +3,7 @@ struct Process {
     int memory;
     int* arrive_times;
     int* run_times; // This and arrive_times should be the same, so only need one variable to track their sizes
+    int adj_arrive;
     int list_size;
     
 };
