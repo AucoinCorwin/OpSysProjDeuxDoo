@@ -24,16 +24,16 @@
 int next_fit(int part_num, int** partitions, char** memory, struct Process proc) {
   int zz = 0;
   int tick = 0;
-  for(zz = 0; zz < part_num; zz++) {
-    if(partitions[zz][2] >= proc.memory) {
+  for (zz = 0; zz < part_num; zz++) {
+    if (partitions[zz][2] >= proc.memory) {
       int i = partitions[zz][0];
       int j = partitions[zz][1];
       int count = proc.memory;
-      while(count > 0){
+      while (count > 0) {
         tick = 1;
         memory[i][j] = proc.id;
         i++;
-        if(i > 31){
+        if (i > 31) {
           i = 0;
           j++;
         }
@@ -42,31 +42,27 @@ int next_fit(int part_num, int** partitions, char** memory, struct Process proc)
       break;
     }
   }
-  if(tick == 0)
-    return -1;
-  return 0;
+  if (tick == 0) return -1;
+  else return 0;
 }
 
-int best_fit(int part_num, int** partitions, char** memory, struct Process proc){
+int best_fit(int part_num, int** partitions, char** memory, struct Process proc) {
   int zz = 0;
   int size, loc = 99;
-  for(zz = 0; zz < part_num; zz++){
-    if(partitions[zz][2] - proc.memory < size){
+  for (zz = 0; zz < part_num; zz++) {
+    if (partitions[zz][2] - proc.memory < size) {
       loc = zz;
       size = partitions[zz][2] - proc.memory;
     }
   }
-  if(loc == 99){
-    //There's no space that works
-    return -1;
-  }
+  if (loc == 99) return -1;  // There's no space that works
   int i = partitions[loc][0];
   int j = partitions[loc][1];
   int count = proc.memory;
-  while(count > 0){
+  while (count > 0) {
     memory[i][j] = proc.id;
     i++;
-    if(i > 31){
+    if (i > 31) {
       i = 0;
       j++;
     }
@@ -75,26 +71,23 @@ int best_fit(int part_num, int** partitions, char** memory, struct Process proc)
   return 0;
 }
 
-int worst_fit(int part_num, int** partitions, char** memory, struct Process proc){
+int worst_fit(int part_num, int** partitions, char** memory, struct Process proc) {
   int zz = 0;
   int size, loc = -1;
-  for(zz = 0; zz < part_num; zz++){
-    if(partitions[zz][2] - proc.memory > size){
+  for (zz = 0; zz < part_num; zz++) {
+    if (partitions[zz][2] - proc.memory > size) {
       loc = zz;
       size = partitions[zz][2] - proc.memory;
     }
   }
-  if(loc == -1){
-    //There's no space that works
-    return -1;
-  }
+  if (loc == -1) return -1; // There's no space that works
   int i = partitions[loc][0];
   int j = partitions[loc][1];
   int count = proc.memory;
-  while(count > 0){
+  while (count > 0) {
     memory[i][j] = proc.id;
     i++;
-    if(i > 31){
+    if (i > 31) {
       i = 0;
       j++;
     }
@@ -103,21 +96,18 @@ int worst_fit(int part_num, int** partitions, char** memory, struct Process proc
   return 0;
 }
 
-int first_fit(char** memory, struct Process proc){
+int first_fit(char** memory, struct Process proc) {
   int free = 0;
   int i, j = 0;
-  for(i = 0; i < 32; i++){
-    for(j = 0; j < 8; j++){
-      if(memory[i][j] == '.'){
-        free++;
-      }
+  for (i = 0; i < 32; i++) {
+    for (j = 0; j < 8; j++) {
+      if (memory[i][j] == '.') free++;
     }
   }
-  if(free < proc.memory)
-    return -1;
-  for(i = 0; i < 32; i++){
-    for(j = 0; j < 8; j++){
-      if(memory[i][j] == '.' && free > 0){
+  if (free < proc.memory) return -1;
+  for (i = 0; i < 32; i++) {
+    for (j = 0; j < 8; j++) {
+      if ((memory[i][j] == '.') && (free > 0)) {
         memory[i][j] = proc.id;
         free--;
       }
@@ -130,13 +120,10 @@ int get_parts(char **memory, int **partitions) {
   int i, j, count, parts;
   count = 0;
   parts = 0;
-  
-  for(i = 0; i < 32; i++){
-    for(j = 0; j < 8; j++){
-      if(memory[i][j] == '.'){
-        count++;
-      }
-      else if(count != 0){
+  for (i = 0; i < 32; i++) {
+    for (j = 0; j < 8; j++) {
+      if (memory[i][j] == '.') count++;
+      else if (count != 0) {
         parts++;
         partitions = realloc(partitions, parts * (sizeof(int) * 3));
         partitions[parts][0] = i;
@@ -146,7 +133,6 @@ int get_parts(char **memory, int **partitions) {
       }
     }
   }
-  
   return parts;
 }
 
@@ -212,19 +198,23 @@ int main(int argc, char * argv[]) {
     for (i = 0; i < num_proc; i++) {
       for (j = proc_array[i].list_size; j > 0; j--) {
         if (proc_array[i].arrive_times[j] == t) {
+          msg_arrive(t, proc_array[i].id, proc_array[i].memory);
           int num_parts = get_parts(memory, partitions);
           int result = next_fit(num_parts, partitions, memory, proc_array[i]);
           if (result > -1) {
-            //Check if we have space if we defrag
-            //If Yes: Defrag
-            //If No: ignore
+            // TBA: Check if we have space if we defrag
+            // If Yes: Defrag
+            // If No: ignore
+            msg_skip(t, proc_array[i].id);
           }
           else {
-            //Uhhh, idk
+            // TBA: place
+             msg_place(t, proc_array[i].id, memory);
           }
         }
         if (proc_array[i].arrive_times[j] + proc_array[i].run_times[j] == t) {
-          //Handle removal (not implemented)
+          // TBA: Handle removal
+          msg_remove(t, proc_array[i].id, memory);
         }
       }
     }
