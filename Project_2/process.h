@@ -23,9 +23,3 @@ int get_seg(int init, int max, char* msg, char forbidden) {
 int int_len(int i) {
     return (i == 0 ? 1 : (int) (log10(i) + 1));
 }
-
-// Report error & quit
-void msg_error(char *msg) {
-    fprintf(stderr, "ERROR: <%s>\n", msg);
-    exit(EXIT_FAILURE);
-}
