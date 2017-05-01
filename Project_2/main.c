@@ -83,15 +83,15 @@ int next_fit(int part_num, struct Partition * partitions, char** memory, struct 
 
 int best_fit(int part_num, struct Partition * partitions, char** memory, struct Process proc, int * px, int * py) {
   int zz = 0;
-  int size = 999; 
-  int loc = 999;
+  int size = 999;
+  int loc = -1;
   for (zz = 0; zz < part_num; zz++) {
     if (partitions[zz].size - proc.memory < size && partitions[zz].size - proc.memory > -1) {
       loc = zz;
       size = partitions[zz].size - proc.memory;
     }
   }
-  if (loc == 999) return -1;  // There's no space that works
+  if (loc == -1) return -1;  // There's no space that works
   int i = partitions[loc].x;
   int j = partitions[loc].y;
   int count = proc.memory;
@@ -160,7 +160,7 @@ int first_fit(char** memory, struct Process proc) {
   return 0;
 }
 
-int get_parts(char **memory, struct Partition *partitions, int px, int py) {
+int next_get_parts(char **memory, struct Partition *partitions, int px, int py) {
   int i, j, count, parts;
   count = 0;
   parts = 0;
@@ -175,18 +175,7 @@ int get_parts(char **memory, struct Partition *partitions, int px, int py) {
           
       if (memory[i][j] == '.'){
         if(count == 0){
-          if(i + j != 0){
-            if(j == 0){
-              if(memory[i][7] == '.')
-                continue;
-            }
-            else{
-              if(memory[i][j - 1] == '.')
-                continue;
-            }
-          }
           parts++;
-          partitions = realloc(partitions, parts * sizeof(struct Process));
           partitions[parts - 1].x = i;
           partitions[parts - 1].y = j;
         }
@@ -207,7 +196,72 @@ int get_parts(char **memory, struct Partition *partitions, int px, int py) {
       if (memory[i][j] == '.'){
         if(count == 0){
           parts++;
-          partitions = realloc(partitions, parts * sizeof(struct Process));
+          partitions[parts - 1].x = i;
+          partitions[parts - 1].y = j;
+          
+        }
+        count++;
+      } 
+      else if (count != 0) {
+        partitions[parts - 1].size = count;
+        count = 0;
+      }
+    }
+  }
+  if(count > 0){
+    partitions[parts - 1].size = count;
+    count = 0;
+  }
+  return parts;
+}
+int get_parts(char **memory, struct Partition *partitions, int px, int py) {
+  int i, j, count, parts;
+  count = 0;
+  parts = 0;
+  for (j = 0; j < 8; j++) {
+    for (i = 0; i < 32; i++) {
+      if(j + i == 0){
+        if((px) + (py) != 0){
+          i = (px);
+          j = (py);
+        }
+      }
+          
+      if (memory[i][j] == '.'){
+        if(count == 0){
+          if(i + j != 0){
+            if(j == 0){
+              if(memory[i - 1][j] == '.'){
+                continue;
+              }
+            }
+            else{
+              if(memory[i][j - 1] == '.'){
+                continue;
+              }
+            }
+          }
+          parts++;
+          partitions[parts - 1].x = i;
+          partitions[parts - 1].y = j;
+        }
+        count++;
+      } 
+      else if (count != 0) {
+        partitions[parts - 1].size = count;
+        count = 0;
+      }
+    }
+  }
+  if(count > 0){
+    partitions[parts - 1].size = count;
+    count = 0;
+  }
+  for (j = 0; j < 8; j++) {
+    for (i = 0; i < 32; i++) {
+      if (memory[i][j] == '.'){
+        if(count == 0){
+          parts++;
           partitions[parts - 1].x = i;
           partitions[parts - 1].y = j;
           
@@ -312,7 +366,7 @@ int main(int argc, char * argv[]) {
     memory[i] = malloc(8 * sizeof(char));
     for (j = 0; j < 8; j++) memory[i][j] = '.';
   }
-  struct Partition* partitions = malloc(sizeof(struct Partition));
+  struct Partition partitions[12] = {};
   
   struct Process* holding_q = (struct Process*) malloc(sizeof(struct Process));
   int q_size = 0;
@@ -332,6 +386,13 @@ int main(int argc, char * argv[]) {
   while (num_left > 0) { 
     for (i = 0; i < num_proc; i++) {
       for (j = 0; j < proc_array[i].list_size; j++) {
+        if (proc_array[i].arrive_times[j] + proc_array[i].run_times[j] == t || proc_array[i].adj_arrive == t) {
+            int temp = remove_from_mem(proc_array[i].id, memory);
+            proc_array[i].adj_arrive = -1;
+            num_left--;
+            if(temp > 0)
+              msg_remove(rt, proc_array[i].id, memory);
+        }
         if (proc_array[i].arrive_times[j] == t) {
           if( t < defrag_stop){
             proc_array[i].adj_arrive = defrag_stop + proc_array[i].run_times[j];
@@ -343,16 +404,14 @@ int main(int argc, char * argv[]) {
           else if(t == defrag_stop){
             int zz;
             for(zz = 0; zz < q_size; zz++){
-              partitions = malloc(sizeof(struct Partition));
-              int num_parts = get_parts(memory, partitions, px, py);
+              int num_parts = next_get_parts(memory, partitions, px, py);
               int result = next_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
               if (result == -1) {
                 if(get_open_mem(memory) >= proc_array[i].memory){
                   defrag_stop = defrag(memory);
                   rt += defrag_stop;
                   defrag_stop += t;
-                  partitions = malloc(sizeof(struct Partition));
-                  num_parts = get_parts(memory, partitions, px, py);
+                  num_parts = next_get_parts(memory, partitions, px, py);
                   result = next_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
                   msg_place(rt, proc_array[i].id, memory);
                 }
@@ -363,20 +422,17 @@ int main(int argc, char * argv[]) {
           }
           else{
             msg_arrive(rt, proc_array[i].id, proc_array[i].memory);
-            partitions = malloc(sizeof(struct Partition));
-            int num_parts = get_parts(memory, partitions, px, py);
+            int num_parts = next_get_parts(memory, partitions, px, py);
             int result = next_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
             if (result == -1) {
               if(get_open_mem(memory) >= proc_array[i].memory){
-                msg_defrag_start(rt, proc_array[i].id)
+                msg_defrag_start(rt, proc_array[i].id);
                 defrag_stop = defrag(memory);
                 rt += defrag_stop;
                 //TBA: Fetch a list of chars moved
                 //msg_defrag_end(rt, defrag_stop, , memory)
                 defrag_stop += t;
-                
-                partitions = malloc(sizeof(struct Partition));
-                num_parts = get_parts(memory, partitions, px, py);
+                num_parts = next_get_parts(memory, partitions, px, py);
                 result = next_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
                 msg_place(rt, proc_array[i].id, memory);
               }
@@ -386,23 +442,14 @@ int main(int argc, char * argv[]) {
             else msg_place(rt, proc_array[i].id, memory);
           }
         }
-        if (proc_array[i].arrive_times[j] + proc_array[i].run_times[j] == t || proc_array[i].adj_arrive == t) {
-            int temp = remove_from_mem(proc_array[i].id, memory);
-            proc_array[i].adj_arrive = -1;
-            num_left--;
-            if(temp > 0)
-              msg_remove(rt, proc_array[i].id, memory);
-        }
       }
     }
     t++;
     rt++;
   }
   msg_sim_end(rt - 1, "Contiguous -- Next-Fit");
-  
   // Contiguous -- Best-Fit
   for (i = 0; i < 8; i++) for (j = 0; j < 32; j++) memory[i][j] = '.';
-  
   t = 0;
   rt = 0;
   px = 0;
@@ -422,6 +469,13 @@ int main(int argc, char * argv[]) {
   while (num_left > 0) { 
     for (i = 0; i < num_proc; i++) {
       for (j = 0; j < proc_array[i].list_size; j++) {
+        if (proc_array[i].arrive_times[j] + proc_array[i].run_times[j] == t || proc_array[i].adj_arrive == t) {
+            int temp = remove_from_mem(proc_array[i].id, memory);
+            proc_array[i].adj_arrive = -1;
+            num_left--;
+            if(temp > 0)
+              msg_remove(rt, proc_array[i].id, memory);
+        }
         if (proc_array[i].arrive_times[j] == t) {
           if( t < defrag_stop){
             proc_array[i].adj_arrive = defrag_stop + proc_array[i].run_times[j];
@@ -432,7 +486,6 @@ int main(int argc, char * argv[]) {
           else if(t == defrag_stop){
             int zz;
             for(zz = 0; zz < q_size; zz++){
-              partitions = malloc(sizeof(struct Partition));
               int num_parts = get_parts(memory, partitions, px, py);
               int result = best_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
               if (result == -1) {
@@ -440,7 +493,6 @@ int main(int argc, char * argv[]) {
                   defrag_stop = defrag(memory);
                   rt += defrag_stop;
                   defrag_stop += t;
-                  partitions = malloc(sizeof(struct Partition));
                   num_parts = get_parts(memory, partitions, px, py);
                   result = best_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
                   msg_place(rt, proc_array[i].id, memory);
@@ -452,7 +504,6 @@ int main(int argc, char * argv[]) {
           }
           else{
             msg_arrive(rt, proc_array[i].id, proc_array[i].memory);
-            partitions = malloc(sizeof(struct Partition));
             int num_parts = get_parts(memory, partitions, px, py);
             int result = best_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
             if (result == -1) {
@@ -460,7 +511,6 @@ int main(int argc, char * argv[]) {
                 defrag_stop = defrag(memory);
                 rt += defrag_stop;
                 defrag_stop += t;
-                partitions = malloc(sizeof(struct Partition));
                 num_parts = get_parts(memory, partitions, px, py);
                 result = best_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
                 msg_place(rt, proc_array[i].id, memory);
@@ -470,13 +520,6 @@ int main(int argc, char * argv[]) {
             }
             else msg_place(rt, proc_array[i].id, memory);
           }
-        }
-        if (proc_array[i].arrive_times[j] + proc_array[i].run_times[j] == t || proc_array[i].adj_arrive == t) {
-            int temp = remove_from_mem(proc_array[i].id, memory);
-            proc_array[i].adj_arrive = -1;
-            num_left--;
-            if(temp > 0)
-              msg_remove(rt, proc_array[i].id, memory);
         }
       }
     }
@@ -505,6 +548,13 @@ int main(int argc, char * argv[]) {
   while (num_left > 0) { 
     for (i = 0; i < num_proc; i++) {
       for (j = 0; j < proc_array[i].list_size; j++) {
+        if (proc_array[i].arrive_times[j] + proc_array[i].run_times[j] == t || proc_array[i].adj_arrive == t) {
+            int temp = remove_from_mem(proc_array[i].id, memory);
+            proc_array[i].adj_arrive = -1;
+            num_left--;
+            if(temp > 0)
+              msg_remove(rt, proc_array[i].id, memory);
+        }
         if (proc_array[i].arrive_times[j] == t) {
           if( t < defrag_stop){
             proc_array[i].adj_arrive = defrag_stop + proc_array[i].run_times[j];
@@ -515,7 +565,6 @@ int main(int argc, char * argv[]) {
           else if(t == defrag_stop){
             int zz;
             for(zz = 0; zz < q_size; zz++){
-              partitions = malloc(sizeof(struct Partition));
               int num_parts = get_parts(memory, partitions, px, py);
               int result = worst_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
               if (result == -1) {
@@ -523,7 +572,6 @@ int main(int argc, char * argv[]) {
                   defrag_stop = defrag(memory);
                   rt += defrag_stop;
                   defrag_stop += t;
-                  partitions = malloc(sizeof(struct Partition));
                   num_parts = get_parts(memory, partitions, px, py);
                   result = worst_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
                   msg_place(rt, proc_array[i].id, memory);
@@ -535,7 +583,6 @@ int main(int argc, char * argv[]) {
           }
           else{
             msg_arrive(rt, proc_array[i].id, proc_array[i].memory);
-            partitions = malloc(sizeof(struct Partition));
             int num_parts = get_parts(memory, partitions, px, py);
             int result = worst_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
             if (result == -1) {
@@ -543,8 +590,8 @@ int main(int argc, char * argv[]) {
                 defrag_stop = defrag(memory);
                 rt += defrag_stop;
                 defrag_stop += t;
-                partitions = malloc(sizeof(struct Partition));
                 num_parts = get_parts(memory, partitions, px, py);
+                
                 result = worst_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
                 msg_place(rt, proc_array[i].id, memory);
               }
@@ -553,13 +600,6 @@ int main(int argc, char * argv[]) {
             }
             else msg_place(rt, proc_array[i].id, memory);
           }
-        }
-        if (proc_array[i].arrive_times[j] + proc_array[i].run_times[j] == t || proc_array[i].adj_arrive == t) {
-            int temp = remove_from_mem(proc_array[i].id, memory);
-            proc_array[i].adj_arrive = -1;
-            num_left--;
-            if(temp > 0)
-              msg_remove(rt, proc_array[i].id, memory);
         }
       }
     }
@@ -587,6 +627,13 @@ int main(int argc, char * argv[]) {
   while (num_left > 0) { 
     for (i = 0; i < num_proc; i++) {
       for (j = 0; j < proc_array[i].list_size; j++) {
+        if (proc_array[i].arrive_times[j] + proc_array[i].run_times[j] == t) {
+            int temp = remove_from_mem(proc_array[i].id, memory);
+            proc_array[i].adj_arrive = -1;
+            num_left--;
+            if(temp > 0)
+              msg_remove(rt, proc_array[i].id, memory);
+        }
         if (proc_array[i].arrive_times[j] == t) {
           msg_arrive(rt, proc_array[i].id, proc_array[i].memory);
           int result = first_fit(memory, proc_array[i]);
@@ -594,13 +641,6 @@ int main(int argc, char * argv[]) {
             msg_place(rt, proc_array[i].id, memory);
           else
             msg_skip(rt, proc_array[i].id);
-        }
-        if (proc_array[i].arrive_times[j] + proc_array[i].run_times[j] == t) {
-            int temp = remove_from_mem(proc_array[i].id, memory);
-            proc_array[i].adj_arrive = -1;
-            num_left--;
-            if(temp > 0)
-              msg_remove(rt, proc_array[i].id, memory);
         }
       }
     }
