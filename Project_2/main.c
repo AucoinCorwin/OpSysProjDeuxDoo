@@ -270,15 +270,17 @@ int get_parts(char **memory, struct Partition *partitions, int px, int py) {
   return parts;
 }
 
-int defrag(char **memory, char* moved) {
-  int moved_len = 0;
-  int idcontained;
+int defrag(int rt, char id, char **memory) {
+  msg_defrag_start(rt, id);
   int i, j, k;
   struct Partition ds;
   ds.x = 0;
   ds.y = 0;
   ds.size = 0;
-  int count;
+  int count = 0;
+  char moved[26];
+  int moved_len = 0;
+  int idcontained;
   for (j = 0; j < 8; j++) {
     for (i = 0; i < 32; i++) {
       if (memory[i][j] == '.') {
@@ -309,58 +311,20 @@ int defrag(char **memory, char* moved) {
       }
     }
   }
+  msg_defrag_end(rt + count, count, moved, memory);
   return count;
 }
 
 int main(int argc, char * argv[]) {
-  // Open input file
-  if (argc < 2) msg_error("argc < 2");
-  FILE *input = fopen(argv[1], "r");
-  if (input == NULL) msg_error("failed to open input file");
-  
-  // Read number of processes from input file
-  char line[256];
-  fgets(line, 256, input);
-  if (line == NULL) msg_error("input file too short");
-  int num_proc = atoi(line);
-  if ((num_proc < 1) || (num_proc > 26)) msg_error("invalid number of processes");
-  
-  // Read in raw processes from input file
-  char** proc_raw = (char**) calloc(num_proc, sizeof(char*));
-  int i = 0;
-  while ((fgets(line, 256, input) != NULL) && (i < num_proc)) {
-      if (line[0] != ' ' && line[0] != '#') {
-          proc_raw[i] = malloc(256 * sizeof(char));
-          strncpy(proc_raw[i], line, 255);
-          i++;
-      }
-  }
-  if ((i < num_proc) || (fgets(line, 256, input) != NULL)) msg_error("invalid number of processes");
+  // Create processes
+  FILE* input = open_input(argc, argv[1]);
+  int num_proc = get_num_proc(input);
+  struct Process* proc_array = (struct Process*) malloc(num_proc * sizeof(struct Process));
+  create_proc(proc_array, input, num_proc);
   fclose(input);
   
-  // Create processes from raw data
-  struct Process* proc_array = (struct Process*) malloc(num_proc * sizeof(struct Process));
-  int j;
-  for (i = 0; i < num_proc; i++) {
-      proc_array[i].id = proc_raw[i][0];
-      proc_array[i].memory = get_seg(2, 256, proc_raw[i], ' ');
-      j = 2 + 1 + int_len(proc_array[i].memory);
-      proc_array[i].list_size = 0;
-      proc_array[i].arrive_times = (int*) calloc(5, sizeof(int));
-      proc_array[i].run_times = (int*) calloc(5, sizeof(int));
-      proc_array[i].adj_arrive = -1;
-      while ((j < 256) && (proc_raw[i][j] != '\n') && (proc_raw[i][j] != '\0') && (proc_array[i].list_size < 5)) {
-        proc_array[i].arrive_times[proc_array[i].list_size] = get_seg(j, 256, proc_raw[i], '/');
-        j += 1 + int_len(proc_array[i].arrive_times[proc_array[i].list_size]);
-        proc_array[i].run_times[proc_array[i].list_size] = get_seg(j, 256, proc_raw[i], ' ');
-        j += 1 + int_len(proc_array[i].run_times[proc_array[i].list_size]);
-        proc_array[i].list_size += 1;
-      }
-      free(proc_raw[i]);
-  }
-  free(proc_raw);
-  
   // Initialize memory
+  int i, j;
   char** memory = (char**) calloc(32, sizeof(char*));
   for (i = 0; i < 32; i++) {
     memory[i] = malloc(8 * sizeof(char));
@@ -396,7 +360,6 @@ int main(int argc, char * argv[]) {
             q_size++;
             holding_q = (struct Process*) realloc(holding_q, q_size * sizeof(struct Process));
             holding_q[q_size - 1] = proc_array[i];
-            
           }
           else if (t == defrag_stop) {
             int zz;
@@ -405,10 +368,8 @@ int main(int argc, char * argv[]) {
               int result = next_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
               if (result == -1) {
                 if (get_open_mem(memory) >= proc_array[i].memory) {
-                  char moved[26];
-                  defrag_stop = defrag(memory, moved);
+                  defrag_stop = defrag(rt, proc_array[i].id, memory);
                   rt += defrag_stop;
-                  msg_defrag_end(rt, defrag_stop, moved, memory);
                   defrag_stop += t;
                   num_parts = next_get_parts(memory, partitions, px, py);
                   result = next_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
@@ -424,11 +385,8 @@ int main(int argc, char * argv[]) {
             int result = next_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
             if (result == -1) {
               if (get_open_mem(memory) >= proc_array[i].memory) {
-                msg_defrag_start(rt, proc_array[i].id);
-                char moved[26];
-                defrag_stop = defrag(memory, moved);
+                defrag_stop = defrag(rt, proc_array[i].id, memory);
                 rt += defrag_stop;
-                msg_defrag_end(rt, defrag_stop, moved, memory);
                 defrag_stop += t;
                 num_parts = next_get_parts(memory, partitions, px, py);
                 result = next_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
@@ -459,10 +417,7 @@ int main(int argc, char * argv[]) {
   num_left = 0;
   defrag_stop = -1;
   for (i = 0; i < num_proc; i++) {
-    for (j = 0; j < proc_array[i].list_size; j++) {
-      // printf("%c : %d / %d\n", proc_array[i].id, proc_array[i].arrive_times[j], proc_array[i].run_times[j]);
-      num_left++;
-    }
+    for (j = 0; j < proc_array[i].list_size; j++) num_left++;
   }
   printf("\n");
   msg_sim_start(t, "Contiguous -- Best-Fit");
@@ -489,11 +444,8 @@ int main(int argc, char * argv[]) {
               int result = best_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
               if (result == -1) {
                 if (get_open_mem(memory) >= proc_array[i].memory) {
-                  msg_defrag_start(rt, proc_array[i].id);
-                  char moved[26];
-                  defrag_stop = defrag(memory, moved);
+                  defrag_stop = defrag(rt, proc_array[i].id, memory);
                   rt += defrag_stop;
-                  msg_defrag_end(rt, defrag_stop, moved, memory);
                   defrag_stop += t;
                   num_parts = get_parts(memory, partitions, px, py);
                   result = best_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
@@ -509,11 +461,8 @@ int main(int argc, char * argv[]) {
             int result = best_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
             if (result == -1) {
               if (get_open_mem(memory) >= proc_array[i].memory) {
-                msg_defrag_start(rt, proc_array[i].id);
-                char moved[26];
-                defrag_stop = defrag(memory, moved);
+                defrag_stop = defrag(rt, proc_array[i].id, memory);
                 rt += defrag_stop;
-                msg_defrag_end(rt, defrag_stop, moved, memory);
                 defrag_stop += t;
                 num_parts = get_parts(memory, partitions, px, py);
                 result = best_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
@@ -543,11 +492,8 @@ int main(int argc, char * argv[]) {
   j = 0;
   num_left = 0;
   defrag_stop = -1;
-  for(i = 0; i < num_proc; i++){
-    for(j = 0; j < proc_array[i].list_size; j++){
-      //printf("%c : %d / %d\n", proc_array[i].id, proc_array[i].arrive_times[j], proc_array[i].run_times[j]);
-      num_left++;
-    }
+  for (i = 0; i < num_proc; i++) {
+    for (j = 0; j < proc_array[i].list_size; j++) num_left++;
   }
   printf("\n");
   msg_sim_start(t, "Contiguous -- Worst-Fit");
@@ -561,7 +507,7 @@ int main(int argc, char * argv[]) {
             if (temp > 0) msg_remove(rt, proc_array[i].id, memory);
         }
         if (proc_array[i].arrive_times[j] == t) {
-          if (t < defrag_stop){
+          if (t < defrag_stop) {
             proc_array[i].adj_arrive = defrag_stop + proc_array[i].run_times[j];
             q_size++;
             holding_q = (struct Process*) realloc(holding_q, q_size * sizeof(struct Process));
@@ -574,11 +520,8 @@ int main(int argc, char * argv[]) {
               int result = worst_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
               if (result == -1) {
                 if (get_open_mem(memory) >= proc_array[i].memory) {
-                  msg_defrag_start(rt, proc_array[i].id);
-                  char moved[26];
-                  defrag_stop = defrag(memory, moved);
+                  defrag_stop = defrag(rt, proc_array[i].id, memory);
                   rt += defrag_stop;
-                  msg_defrag_end(rt, defrag_stop, moved, memory);
                   defrag_stop += t;
                   num_parts = get_parts(memory, partitions, px, py);
                   result = worst_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
@@ -594,11 +537,8 @@ int main(int argc, char * argv[]) {
             int result = worst_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
             if (result == -1) {
               if (get_open_mem(memory) >= proc_array[i].memory) {
-                msg_defrag_start(rt, proc_array[i].id);
-                char moved[26];
-                defrag_stop = defrag(memory, moved);
+                defrag_stop = defrag(rt, proc_array[i].id, memory);
                 rt += defrag_stop;
-                msg_defrag_end(rt, defrag_stop, moved, memory);
                 defrag_stop += t;
                 num_parts = get_parts(memory, partitions, px, py);
                 result = worst_fit(num_parts, partitions, memory, proc_array[i], &px, &py);
@@ -627,11 +567,8 @@ int main(int argc, char * argv[]) {
   i = 0;
   j = 0;
   num_left = 0;
-  for(i = 0; i < num_proc; i++){
-    for(j = 0; j < proc_array[i].list_size; j++){
-      //printf("%c : %d / %d\n", proc_array[i].id, proc_array[i].arrive_times[j], proc_array[i].run_times[j]);
-      num_left++;
-    }
+  for (i = 0; i < num_proc; i++) {
+    for (j = 0; j < proc_array[i].list_size; j++) num_left++;
   }
   printf("\n");
   msg_sim_start(t, "Non-contiguous");
@@ -642,8 +579,7 @@ int main(int argc, char * argv[]) {
             int temp = remove_from_mem(proc_array[i].id, memory);
             proc_array[i].adj_arrive = -1;
             num_left--;
-            if(temp > 0)
-              msg_remove(rt, proc_array[i].id, memory);
+            if(temp > 0) msg_remove(rt, proc_array[i].id, memory);
         }
         if (proc_array[i].arrive_times[j] == t) {
           msg_arrive(rt, proc_array[i].id, proc_array[i].memory);
