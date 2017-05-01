@@ -130,10 +130,12 @@ int get_parts(char **memory, int **partitions) {
   int i, j, count, parts;
   count = 0;
   parts = 0;
+  
   for(i = 0; i < 32; i++){
     for(j = 0; j < 8; j++){
-      if(memory[i][j] == '.')
+      if(memory[i][j] == '.'){
         count++;
+      }
       else if(count != 0){
         parts++;
         partitions = realloc(partitions, parts * (sizeof(int) * 3));
@@ -144,6 +146,7 @@ int get_parts(char **memory, int **partitions) {
       }
     }
   }
+  
   return parts;
 }
 
@@ -195,16 +198,39 @@ int main(int argc, char * argv[]) {
   free(proc_raw);
   
   // Initialize memory
-  char** memory = (char**) calloc(8, sizeof(char*));
-  for (i = 0; i < 8; i++) {
-    memory[i] = malloc(32 * sizeof(char));
-    for (j = 0; j < 32; j++) memory[i][j] = '.';
+  char** memory = (char**) calloc(32, sizeof(char*));
+  for (i = 0; i < 32; i++) {
+    memory[i] = malloc(8 * sizeof(char));
+    for (j = 0; j < 8; j++) memory[i][j] = '.';
   }
   msg_memory(memory);
   
+  int ** partitions;
   // Contiguous -- Next-Fit
   int t = 0;
   msg_sim_start(t, "Contiguous -- Next-Fit");
+  while(t < 20000){
+    for(i = 0; i < num_proc; i++){
+      for(j = proc_array[i].list_size; j > 0; j--){
+        if(proc_array[i].arrive_times[j] == t){
+          int num_parts = get_parts(memory, partitions);
+          int result = next_fit(num_parts, partitions, memory, proc_array[i]);
+          if(result > -1){
+            //Check if we have space if we defrag
+            //If Yes: Defrag
+            //If No: ignore
+          }
+          else{
+            //Uhhh, idk
+          }
+        }
+        if(proc_array[i].arrive_times[j] + proc_array[i].run_times[j] == t){
+          //Handle removal (not implemented)
+        }
+      }
+    }
+    t++;
+  }
   // TBA: actual stuff
   msg_sim_end(t, "Contiguous -- Next-Fit");
   
@@ -226,7 +252,7 @@ int main(int argc, char * argv[]) {
   
   // Free & exit
   free(proc_array);
-  for (i = 0; i < 8; i++) free(memory[i]);
+  for (i = 0; i < 32; i++) free(memory[i]);
   free(memory);
   return EXIT_SUCCESS;
 }
