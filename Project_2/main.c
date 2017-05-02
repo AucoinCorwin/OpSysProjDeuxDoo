@@ -354,6 +354,10 @@ int main(int argc, char * argv[]) {
             num_left--;
             if (temp > 0) msg_remove(rt, proc_array[i].id, memory);
         }
+      }
+    }
+    for (i = 0; i < num_proc; i++) {
+      for (j = 0; j < proc_array[i].list_size; j++) {
         if (proc_array[i].arrive_times[j] == t) {
           if (t < defrag_stop) {
             proc_array[i].adj_arrive = defrag_stop + proc_array[i].run_times[j];
@@ -430,6 +434,10 @@ int main(int argc, char * argv[]) {
             num_left--;
             if (temp > 0) msg_remove(rt, proc_array[i].id, memory);
         }
+      }
+    }
+    for (i = 0; i < num_proc; i++) {
+      for (j = 0; j < proc_array[i].list_size; j++) {
         if (proc_array[i].arrive_times[j] == t) {
           if (t < defrag_stop) {
             proc_array[i].adj_arrive = defrag_stop + proc_array[i].run_times[j];
@@ -506,6 +514,10 @@ int main(int argc, char * argv[]) {
             num_left--;
             if (temp > 0) msg_remove(rt, proc_array[i].id, memory);
         }
+      }
+    }
+    for (i = 0; i < num_proc; i++) {
+      for (j = 0; j < proc_array[i].list_size; j++) {
         if (proc_array[i].arrive_times[j] == t) {
           if (t < defrag_stop) {
             proc_array[i].adj_arrive = defrag_stop + proc_array[i].run_times[j];
@@ -581,6 +593,10 @@ int main(int argc, char * argv[]) {
             num_left--;
             if(temp > 0) msg_remove(rt, proc_array[i].id, memory);
         }
+      }
+    }
+    for (i = 0; i < num_proc; i++) {
+      for (j = 0; j < proc_array[i].list_size; j++) {
         if (proc_array[i].arrive_times[j] == t) {
           msg_arrive(rt, proc_array[i].id, proc_array[i].memory);
           int result = first_fit(memory, proc_array[i]);
